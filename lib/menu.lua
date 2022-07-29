@@ -3,7 +3,7 @@ local mod = require 'core/mods'
 local fileselect = require 'fileselect'
 local textentry = require 'textentry'
 
-local matrix = require 'matrix/lib/modmatrix'
+local matrix = require 'matrix/lib/matrix'
 
 local mPARAM = 0
 local mSOURCE = 1
