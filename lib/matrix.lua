@@ -20,15 +20,6 @@ function ModMatrix:install()
     self.global_raw = false
     local outer_self = self
     
-    local core_write = params.write
-    
-    function params:write(filename, name)
-        local old_global_raw = outer_self.global_raw
-        outer_self.global_raw = true
-        core_write(self, filename, name)
-        outer_self.global_raw = old_global_raw
-    end
-
     function number:get(raw)
         if self.modulation == nil or raw == true or outer_self.global_raw then
             return self.value
@@ -110,6 +101,8 @@ function ModMatrix:install()
     -- are wrapping the write function instead. Ugly, I know.
     local old_write = params.write
     function params:write(filename, name)
+      local old_global_raw = outer_self.global_raw
+      outer_self.global_raw = true        
       outer_self.pset_filename = filename or 1
       local pset_number;
       if type(outer_self.pset_filename) == "number" then
@@ -124,6 +117,7 @@ function ModMatrix:install()
         print("Failed to save matrix data", err)
       end
       old_write(self, filename, name)
+      outer_self.global_raw = old_global_raw
     end
     
     local old_read = params.read
