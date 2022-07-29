@@ -1,6 +1,7 @@
 local number = require 'core/params/number'
 local control = require 'core/params/control'
 local taper = require 'core/params/taper'
+local binary = require 'core/params/binary'
 
 local ModMatrix = {
     tBINARY = 1,
@@ -19,6 +20,17 @@ function ModMatrix:install()
     
     self.global_raw = false
     local outer_self = self
+    
+    function binary:get()
+        if self.modulation == nil or outer_self.global_raw then
+            return self.value
+        end
+        if self.value > 0 then return self.value end
+        for _, v in pairs(self.modulation) do
+            if v > 0 then return 1 end
+        end
+        return 0
+    end
     
     function number:get(raw)
         if self.modulation == nil or raw == true or outer_self.global_raw then
@@ -63,7 +75,7 @@ function ModMatrix:install()
     end
 
     function taper:get(raw)
-        if raw == true then
+        if raw == true or outer_self.global_raw then
             return self:map_value(self.value)
         end
         return self:map_value(self:get_modulated_raw())
@@ -87,7 +99,7 @@ function ModMatrix:install()
     end
 
     function control:get(unmodded)
-        if unmodded == true then
+        if unmodded == true or outer_self.global_raw then
             return self:map_value(self.raw)
         end
         return self:map_value(self:get_modulated_raw())
