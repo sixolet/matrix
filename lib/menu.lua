@@ -277,12 +277,41 @@ m.redraw = function()
           screen.move(127,10*i)
           local wiggle = m.modulation_of(p)
           if wiggle ~= nil then
-            local width = wiggle * 25
-            if math.abs(width) < 1 then
+            if t == params.tBINARY or t == params.tTRIGGER then
+              local fresh = false
+              local the_param = params:lookup_param(p)
+              if the_param.beatstamp then
+                local age = (clock.get_beats() - the_param.beatstamp)*clock.get_beat_sec() 
+                fresh = age >= 0 and age < 0.1
+              end
+              local size = 0
+              if t == params.tBINARY then
+                if wiggle and wiggle > 0 then
+                  if fresh then
+                    size = 6
+                  else
+                    size = 4
+                  end
+                elseif fresh then
+                  size = 1
+                end
+              else
+                if fresh and wiggle and wiggle > 0 then
+                  size = 6
+                else
+                  size = 4
+                end
+              end
+              screen.rect(100 - size/2, 10 * i - (2 + size/2), size, size)
+              screen.fill()                
+            else
+              local width = wiggle * 25
+              if math.abs(width) < 1 then
                 width = 1
+              end
+              screen.rect(100, 10 * i - 4, width, 3)
+              screen.fill()
             end
-            screen.rect(100, 10 * i - 4, width, 3)
-            screen.fill()
           elseif t == params.tBINARY or t == params.tTRIGGER or t == params.tNUMBER or t == params.tCONTROL or t == params.tTAPER then
             -- not modulated but could be
             screen.move(98, 10 * i - 2)
@@ -295,8 +324,8 @@ m.redraw = function()
   elseif m.mode == mSOURCE then
     m.calculate_min_max()
     if m.pos == 0 then
-      local n = "SOURCES"
-      n = n .. " / " .. m.paramname
+      local n = "FOR"
+      n = n .. ": " .. m.paramname
       screen.level(4)
       screen.move(0,10)
       screen.text(n)
@@ -324,8 +353,26 @@ m.redraw = function()
             screen.text_right("-")
         end
         screen.stroke()
-        local wiggle = matrix:get(p)
-        if wiggle ~= nil then
+        local wiggle = source.value
+        if source.t == matrix.tBINARY then
+          local fresh = false
+          if source.beatstamp then
+            local age = (clock.get_beats() - source.beatstamp)*clock.get_beat_sec() 
+            fresh = age >= 0 and age < 0.1
+          end
+          local size = 0
+          if wiggle and wiggle > 0 then
+            if fresh then
+              size = 6
+            else
+              size = 4
+            end
+          elseif fresh then
+            size = 1
+          end
+          screen.rect(80 - size/2, 10 * i - (2 + size/2), size, size)
+          screen.fill()
+        elseif wiggle ~= nil then
           local width = wiggle * 25
           if math.abs(width) < 1 then
             width = 1

@@ -292,13 +292,16 @@ end
 
 function ModMatrix:set(modulation_id, value)
     local source = self:lookup_source(modulation_id)
+    local now = clock.get_beats()
     source.value = value
+    source.beatstamp = now
     if self.matrix[source.id] == nil then self.matrix[source.id] = {} end
     local targets = self.matrix[source.id]
     for param_id, depth in pairs(targets) do
         local p = params:lookup_param(param_id)
         if p.modulation == nil then p.modulation = {} end
         p.modulation[source.id] = nilmul(depth, value)
+        p.beatstamp = now
         if p.t ~= params.tTRIGGER then
             self:defer_bang(p.id, p.priority)
         elseif value > 0 then
