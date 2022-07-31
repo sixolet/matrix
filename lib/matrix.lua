@@ -398,10 +398,12 @@ function ModMatrix:_add_modulation_depth_params_helper(id, cell_id)
             local tgt
             if not pcall(function () tgt = params:lookup_param(target) end) then
                 print("Can't find target for modulation param", tgt)
+                return
             end
             local src
             if not pcall(function () src = self:lookup_source(source) end) then
                 print("Can't find source for modulation param", src)
+                return
             end
             params:set(id, self:get_depth(tgt.id, src.id), true) -- silently set the param to the current depth
             p.name = src.name .. "->" .. tgt.name
@@ -418,7 +420,7 @@ end
 function ModMatrix:add_modulation_depth_params()
     self.number_depth_params = {}
     self.binary_depth_params = {}
-    params:add_group("modulation_depths", "mod depths", 65)
+    params:add_group("mod depths", 65)
     for i=1,16,1 do
         local id = "matrix_depth_"..i
         local cell_id = id .. "_cell"
