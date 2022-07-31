@@ -11,6 +11,7 @@ mod.hook.register("script_pre_init", "install matrix post-init hooks", function(
     local old_init = init
     init = function()
         old_init()
+        matrix:add_modulation_depth_params()
         matrix:call_post_init_hooks()
         -- One last params read. Don't bang except the things we explicitly deferred a bang of.
         params:read(nil, true)

@@ -119,6 +119,13 @@ m.key = function(n,z)
       else
         build_page()
       end
+    elseif n == 3 and z == 1 and m.alt then
+      local source = matrix:lookup_source(i)
+      if matrix:has_active_depth_param(m.param_id, source.id) then
+        matrix:deactivate_depth_param(m.param_id, source.id)
+      else
+        matrix:activate_depth_param(m.param_id, source.id)
+      end
     elseif n == 3 and z == 1 then
       matrix:set_depth(m.param_id, i, nil)
       m.calculated = false
@@ -343,8 +350,12 @@ m.redraw = function()
         if i==3 then screen.level(15) else screen.level(4) end
         local p = page[i+m.pos-2]
         local source = matrix:lookup_source(p)
+        local star = ""
+        if matrix:has_active_depth_param(m.param_id, source.id) then
+            star = "*"
+        end
         screen.move(0,10*i)
-        screen.text(source.name)
+        screen.text(source.name..star)
         screen.move(127,10*i)
         local depth = matrix:get_depth(m.param_id, p)
         if depth ~= nil then

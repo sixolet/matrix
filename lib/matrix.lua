@@ -12,7 +12,14 @@ local ModMatrix = {
     sources_list = {}, -- List of mod sources
     sources_indexes = {}, -- mod sources by index
     post_init_hooks = {}, -- functions to call after init
+    active_depth_params = {},
 }
+
+function split2(s)
+    i = string.find(s, ',')
+    return string.sub(s, 1, i-1), string.sub(s, i+1)
+end
+
 
 function ModMatrix:install()
     -- Only install once
@@ -143,11 +150,15 @@ function ModMatrix:install()
         outer_self.pset_filename = outer_self.pset_filename .. "-" .. pset_number .. ".pset"
       end
       outer_self.matrix_filename = outer_self.pset_filename .. ".matrix"
-      print("loading matrix from", outer_self.matrix_filename)
-      outer_self.matrix, err = tab.load(outer_self.matrix_filename)
-      if err then
-        outer_self.matrix = {}
-        print("Error reading matrix data:", err)
+      if util.file_exists(outer_self.matrix_filename) then
+        print("loading matrix from", outer_self.matrix_filename)
+        outer_self.matrix, err = tab.load(outer_self.matrix_filename)
+        if err then
+          outer_self.matrix = {}
+          print("Error reading matrix data:", err)
+        end
+      else
+        print("no matrix file; not loading matrix")
       end
       old_read(self, filename, silent)
     end
@@ -316,6 +327,115 @@ function ModMatrix:clear()
     self.sources_list = {}
     self.sources_indexes = {}
     self.post_init_hooks = {}
+    active_depth_params = {}
+end
+
+function ModMatrix:activate_depth_param(param_id, source_id)
+    local param = params:lookup_param(param_id)
+    local the_list
+    if param.t == params.tBINARY or param.t == params.tTRIGGER then
+        the_list = self.binary_depth_params
+    else
+        the_list = self.number_depth_params
+    end
+    for _, target_param_id in ipairs(the_list) do
+        if params:get(target_param_id) ~= nil then
+            params:set(target_param_id, param.id .. "," .. source_id)
+            return
+        end
+    end
+    error("Could not allocate a depth param, they seem all taken")
+end
+
+function ModMatrix:deactivate_depth_param(param_id, source_id)
+    local param = params:lookup_param(param_id)
+    local the_list
+    if param.t == params.tBINARY or param.t == params.tTRIGGER then
+        the_list = self.binary_depth_params
+    else
+        the_list = self.number_depth_params
+    end
+    for _, target_param_id in ipairs(the_list) do
+        if params:get(target_param_id) == param.id .. "," .. source_id then
+            params:set(target_param_id, "")
+        end
+    end
+end
+
+function ModMatrix:rebuild_active_depth_params()
+    self.active_depth_params = {}
+    for _, lst in ipairs({self.binary_depth_params, self.number_depth_params}) do
+        for _, cell_id in ipairs(lst) do
+            local v = params:get(cell_id)
+            if v and v ~= "" then
+                self.active_depth_params[v] = true
+            end
+        end
+    end
+end
+
+function ModMatrix:has_active_depth_param(param_id, source_id)
+    local param = params:lookup_param(param_id)
+    return self.active_depth_params[param.id..","..source_id]
+end
+
+function ModMatrix:_add_modulation_depth_params_helper(id, cell_id)
+    params:set_action(id, function(val)
+        local cell_contents = params:get(cell_id)
+        if cell_contents == "" then return end
+        local target, source = split2(cell_contents)
+        if not pcall(function() self:set_depth(target, source, val) end) then
+            print("error setting modulation", target, source)
+        end
+    end)
+    params:set_action(cell_id, function(s)
+        if s == nil or s == "" then
+            params:hide(id)
+        else
+            -- if not pcall(function()
+            local p = params:lookup_param(id)
+            local target, source = split2(s)
+            local tgt
+            if not pcall(function () tgt = params:lookup_param(target) end) then
+                print("Can't find target for modulation param", tgt)
+            end
+            local src
+            if not pcall(function () src = self:lookup_source(source) end) then
+                print("Can't find source for modulation param", src)
+            end
+            params:set(id, self:get_depth(tgt.id, src.id), true) -- silently set the param to the current depth
+            p.name = src.name .. "->" .. tgt.name
+            params:show(id)
+
+        end
+        self:rebuild_active_depth_params()
+    end)
+    self:defer_bang(cell_id)
+    params:hide(id)
+    params:hide(cell_id)
+end
+
+function ModMatrix:add_modulation_depth_params()
+    self.number_depth_params = {}
+    self.binary_depth_params = {}
+    params:add_group("modulation_depths", "mod depths", 65)
+    for i=1,16,1 do
+        local id = "matrix_depth_"..i
+        local cell_id = id .. "_cell"
+        params:add_control(id, "dummy depth", controlspec.new(-1, 1, 'lin', 0, 0))
+        params:add_text(cell_id)
+        table.insert(self.number_depth_params, cell_id)
+        self:_add_modulation_depth_params_helper(id, cell_id)
+    end
+    for i=1,16,1 do
+        local id = "matrix_connect_"..i
+        local cell_id = id .. "_cell"
+        params:add_binary(id, "dummy connect", "toggle", 0)
+        params:add_text(cell_id)
+        table.insert(self.binary_depth_params, cell_id)
+        self:_add_modulation_depth_params_helper(id, cell_id)
+    end
+    params:add_separator("end")
 end
 
 return ModMatrix
