@@ -9,6 +9,7 @@ end)
 
 mod.hook.register("script_pre_init", "install matrix post-init hooks", function()
     local old_init = init
+    menu.page = nil
     init = function()
         old_init()
         matrix:add_modulation_depth_params()
@@ -19,6 +20,7 @@ mod.hook.register("script_pre_init", "install matrix post-init hooks", function(
 end)
 
 mod.hook.register("script_post_cleanup", "clear the matrix for the next script", function()
+    menu.reset()
     matrix:clear()
 end)
 

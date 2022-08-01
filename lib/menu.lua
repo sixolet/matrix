@@ -26,8 +26,19 @@ local page
 m.reset = function()
   page = nil
   m.pos = 0
+  m.oldpos = 0
   m.group = false
   m.mode = mPARAM
+  m.groupid = 0
+  m.alt = false
+  m.mode_prev = mPARAM
+  m.mod_pos = 1
+  m.mpos = 1
+  m.paramname = nil
+  m.param_id = nil
+  m.min_string = nil
+  m.max_string = nil
+  m.calculated = false
 end
 
 local function build_page()

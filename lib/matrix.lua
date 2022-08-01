@@ -420,6 +420,7 @@ end
 function ModMatrix:add_modulation_depth_params()
     self.number_depth_params = {}
     self.binary_depth_params = {}
+    params:add_separator("matrix")
     params:add_group("mod depths", 65)
     for i=1,16,1 do
         local id = "matrix_depth_"..i
