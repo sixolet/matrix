@@ -188,12 +188,16 @@ function ModMatrix:bang_all()
     self.bang_deferred = nil
 end
 
-function ModMatrix:add_post_init_hook(f)
-    table.insert(self.post_init_hooks, f)
+function ModMatrix:add_post_init_hook(f, priority)
+    priority = priority or 0
+    table.insert(self.post_init_hooks, {fn = f, priority = priority})
 end
 
 function ModMatrix:call_post_init_hooks()
-    for _, f in ipairs(self.post_init_hooks) do f() end
+    table.sort(self.post_init_hooks, function(a,b)
+        return a.priority > b.priority
+    end)
+    for _, f in ipairs(self.post_init_hooks) do f.fn() end
 end
 
 function ModMatrix:defer_bang(param_id, tier)
