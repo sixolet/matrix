@@ -171,7 +171,11 @@ function ModMatrix:bang_all()
         local done = false
         for round=1,3,1 do
             for v, _ in pairs(tier) do
-                params:lookup_param(v):bang()
+                if params.lookup[v] ~= nil then
+                    params:lookup_param(v):bang()
+                else
+                    print("skipped bang for missing param", v)
+                end
                 tier[v] = nil
             end
             if next(tier) == nil then
