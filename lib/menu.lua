@@ -119,7 +119,7 @@ m.key = function(n,z)
     end
     -- PARAM
   elseif m.mode == mSOURCE then
-    local i = m.pos+1
+    local i = page[m.pos+1]
     if n == 2 and z == 1 then 
       -- back
       m.pos = m.oldpos
@@ -138,6 +138,8 @@ m.key = function(n,z)
         matrix:activate_depth_param(m.param_id, source.id)
       end
     elseif n == 3 and z == 1 then
+      local source = matrix:lookup_source(i)
+      -- print("setting depth", m.param_id, i, source.id, 0)
       matrix:set_depth(m.param_id, i, nil)
       m.calculated = false
     end
@@ -153,25 +155,28 @@ m.enc = function(n,d)
       if m.pos ~= prev then m.redraw() end
     -- jump section
     elseif m.mode == mSOURCE and n==3 then
-      local i = m.pos+1
+      local i = page[m.pos+1]
       local source = matrix:lookup_source(i)
       local param = params:lookup_param(m.param_id)
       if param.t == params.tBINARY or param.t == params.tTRIGGER then
-        if d > 0 then 
+        if d > 0 then
+            -- print("setting depth", m.param_id, i, source.id, 1)
             matrix:set_depth(m.param_id, i, 1)
         else
+            -- print("setting depth", m.param_id, i, source.id, 0)
             matrix:set_depth(m.param_id, i, nil)
         end
       else
         local depth = matrix:get_depth(m.param_id, i)
         if depth == nil then depth = 0 end
         depth = depth + 0.01 * d
+        -- print("setting depth", m.param_id, i, source.id, depth)
         matrix:set_depth(m.param_id, i, depth)
         m.calculated = false
       end
     elseif m.mode == mPARAM and n==2 and m.alt==true then
       d = d>0 and 1 or -1
-      local i = m.pos+1
+      local i = page[m.pos+1]
       repeat
         i = i+d
         if i > #page then i = 1 end
