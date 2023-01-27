@@ -8,7 +8,7 @@ local ModMatrix = {
     tUNIPOLAR = 2,
     tBIPOLAR = 3,
     matrix = {}, -- modulation -> param -> depth
-    bangers = {{}, {}, {}, {}},
+    bangers = { {}, {}, {}, {} },
     sources_list = {}, -- List of mod sources
     sources_indexes = {}, -- mod sources by index
     post_init_hooks = {}, -- functions to call after init
@@ -17,17 +17,16 @@ local ModMatrix = {
 
 function split2(s)
     i = string.find(s, ',')
-    return string.sub(s, 1, i-1), string.sub(s, i+1)
+    return string.sub(s, 1, i - 1), string.sub(s, i + 1)
 end
-
 
 function ModMatrix:install()
     -- Only install once
     if self.installed then return end
-    
+
     self.global_raw = false
     local outer_self = self
-    
+
     function binary:get()
         if self.modulation == nil or outer_self.global_raw then
             return self.value
@@ -38,14 +37,14 @@ function ModMatrix:install()
         end
         return 0
     end
-    
+
     function number:get(raw)
         if self.modulation == nil or raw == true or outer_self.global_raw then
             return self.value
         end
         local val = self.value
         for _, v in pairs(self.modulation) do
-            val = val + (v*self.range)
+            val = val + (v * self.range)
         end
         val = util.round(val, 1)
         if self.wrap then
@@ -59,7 +58,7 @@ function ModMatrix:install()
     function number:bang()
         self.action(self:get())
     end
-    
+
     function number:delta(d)
         self:set(self:get(true) + d)
     end
@@ -115,61 +114,61 @@ function ModMatrix:install()
     function params:get_unmodded(p)
         return self:lookup_param(p):get(true)
     end
-    
+
     -- Since a script might use the official write callback, we
     -- are wrapping the write function instead. Ugly, I know.
     local old_write = params.write
     function params:write(filename, name)
-      local old_global_raw = outer_self.global_raw
-      outer_self.global_raw = true        
-      outer_self.pset_filename = filename or 1
-      local pset_number;
-      if type(outer_self.pset_filename) == "number" then
-        local n = outer_self.pset_filename
-        outer_self.pset_filename = norns.state.data .. norns.state.shortname
-        pset_number = string.format("%02d",n)
-        outer_self.pset_filename = outer_self.pset_filename .. "-" .. pset_number .. ".pset"
-      end
-      outer_self.matrix_filename = outer_self.pset_filename .. ".matrix"
-      local err = tab.save(outer_self.matrix, outer_self.matrix_filename)
-      if err then
-        print("Failed to save matrix data", err)
-      end
-      old_write(self, filename, name)
-      outer_self.global_raw = old_global_raw
+        local old_global_raw = outer_self.global_raw
+        outer_self.global_raw = true
+        outer_self.pset_filename = filename or 1
+        local pset_number;
+        if type(outer_self.pset_filename) == "number" then
+            local n = outer_self.pset_filename
+            outer_self.pset_filename = norns.state.data .. norns.state.shortname
+            pset_number = string.format("%02d", n)
+            outer_self.pset_filename = outer_self.pset_filename .. "-" .. pset_number .. ".pset"
+        end
+        outer_self.matrix_filename = outer_self.pset_filename .. ".matrix"
+        local err = tab.save(outer_self.matrix, outer_self.matrix_filename)
+        if err then
+            print("Failed to save matrix data", err)
+        end
+        old_write(self, filename, name)
+        outer_self.global_raw = old_global_raw
     end
-    
+
     local old_read = params.read
     function params:read(filename, silent)
-      outer_self.pset_filename = filename or norns.state.pset_last
-      local pset_number;
-      if type(outer_self.pset_filename) == "number" then
-        local n = outer_self.pset_filename
-        outer_self.pset_filename = norns.state.data .. norns.state.shortname
-        pset_number = string.format("%02d",n)
-        outer_self.pset_filename = outer_self.pset_filename .. "-" .. pset_number .. ".pset"
-      end
-      outer_self.matrix_filename = outer_self.pset_filename .. ".matrix"
-      if util.file_exists(outer_self.matrix_filename) then
-        print("loading matrix from", outer_self.matrix_filename)
-        outer_self.matrix, err = tab.load(outer_self.matrix_filename)
-        if err then
-          outer_self.matrix = {}
-          print("Error reading matrix data:", err)
+        outer_self.pset_filename = filename or norns.state.pset_last
+        local pset_number;
+        if type(outer_self.pset_filename) == "number" then
+            local n = outer_self.pset_filename
+            outer_self.pset_filename = norns.state.data .. norns.state.shortname
+            pset_number = string.format("%02d", n)
+            outer_self.pset_filename = outer_self.pset_filename .. "-" .. pset_number .. ".pset"
         end
-      else
-        print("no matrix file; not loading matrix")
-      end
-      old_read(self, filename, silent)
+        outer_self.matrix_filename = outer_self.pset_filename .. ".matrix"
+        if util.file_exists(outer_self.matrix_filename) then
+            print("loading matrix from", outer_self.matrix_filename)
+            outer_self.matrix, err = tab.load(outer_self.matrix_filename)
+            if err then
+                outer_self.matrix = {}
+                print("Error reading matrix data:", err)
+            end
+        else
+            print("no matrix file; not loading matrix")
+        end
+        old_read(self, filename, silent)
     end
-    
+
     self.installed = true
 end -- install
 
 function ModMatrix:bang_all()
     for tn, tier in ipairs(self.bangers) do
         local done = false
-        for round=1,3,1 do
+        for round = 1, 3, 1 do
             for v, _ in pairs(tier) do
                 if params.lookup[v] ~= nil then
                     params:lookup_param(v):bang()
@@ -218,7 +217,7 @@ function ModMatrix:lookup_source(id)
     elseif self.sources_list[id] then
         return self.sources_list[id]
     else
-        error("invalid mod matrix index: "..id)
+        error("invalid mod matrix index: " .. id)
     end
 end
 
@@ -228,7 +227,7 @@ function ModMatrix:add(source)
 end
 
 function ModMatrix:add_binary(id, name)
-    self:add{
+    self:add {
         t = self.tBINARY,
         name = name,
         id = id,
@@ -236,7 +235,7 @@ function ModMatrix:add_binary(id, name)
 end
 
 function ModMatrix:add_unipolar(id, name)
-    self:add{
+    self:add {
         t = self.tUNIPOLAR,
         name = name,
         id = id,
@@ -244,10 +243,10 @@ function ModMatrix:add_unipolar(id, name)
 end
 
 function ModMatrix:add_bipolar(id, name)
-    self:add{
+    self:add {
         t = self.tBIPOLAR,
         name = name,
-        id =id,
+        id = id,
     }
 end
 
@@ -257,7 +256,7 @@ end
 
 local nilmul = function(depth, modulation)
     if modulation == nil then return nil end
-    return depth*modulation
+    return depth * modulation
 end
 
 function ModMatrix:set_depth(param_id, modulation_id, depth)
@@ -267,7 +266,7 @@ function ModMatrix:set_depth(param_id, modulation_id, depth)
     local p = params:lookup_param(param_id)
     if depth == nil or depth == 0 then
         if self.matrix[modulation_id] ~= nil then
-            self.matrix[modulation_id][p.id] = nil        
+            self.matrix[modulation_id][p.id] = nil
             if next(self.matrix[modulation_id]) == nil then
                 self.matrix[modulation_id] = nil
             end
@@ -331,7 +330,7 @@ end
 
 function ModMatrix:clear()
     self.matrix = {}
-    self.bangers = {{}, {}, {}, {}}
+    self.bangers = { {}, {}, {}, {} }
     self.sources_list = {}
     self.sources_indexes = {}
     self.post_init_hooks = {}
@@ -372,7 +371,7 @@ end
 
 function ModMatrix:rebuild_active_depth_params()
     self.active_depth_params = {}
-    for _, lst in ipairs({self.binary_depth_params, self.number_depth_params}) do
+    for _, lst in ipairs({ self.binary_depth_params, self.number_depth_params }) do
         for _, cell_id in ipairs(lst) do
             local v = params:get(cell_id)
             if v and v ~= "" then
@@ -384,7 +383,7 @@ end
 
 function ModMatrix:has_active_depth_param(param_id, source_id)
     local param = params:lookup_param(param_id)
-    return self.active_depth_params[param.id..","..source_id]
+    return self.active_depth_params[param.id .. "," .. source_id]
 end
 
 function ModMatrix:_add_modulation_depth_params_helper(id, cell_id)
@@ -404,19 +403,20 @@ function ModMatrix:_add_modulation_depth_params_helper(id, cell_id)
             local p = params:lookup_param(id)
             local target, source = split2(s)
             local tgt
-            if not pcall(function () tgt = params:lookup_param(target) end) then
+            if not pcall(function() tgt = params:lookup_param(target) end) then
                 print("Can't find target for modulation param", tgt)
                 return
             end
             local src
-            if not pcall(function () src = self:lookup_source(source) end) then
+            if not pcall(function() src = self:lookup_source(source) end) then
                 print("Can't find source for modulation param", src)
                 return
             end
-            params:set(id, self:get_depth(tgt.id, src.id), true) -- silently set the param to the current depth
+            local current_depth = self:get_depth(tgt.id, src.id)
+            if current_depth == nil then current_depth = 0 end
+            params:set(id, current_depth, true) -- silently set the param to the current depth
             p.name = src.name .. "->" .. tgt.name
             params:show(id)
-
         end
         self:rebuild_active_depth_params()
     end)
@@ -430,16 +430,16 @@ function ModMatrix:add_modulation_depth_params()
     self.binary_depth_params = {}
     params:add_separator("matrix")
     params:add_group("mod depths", 65)
-    for i=1,16,1 do
-        local id = "matrix_depth_"..i
+    for i = 1, 16, 1 do
+        local id = "matrix_depth_" .. i
         local cell_id = id .. "_cell"
         params:add_control(id, "dummy depth", controlspec.new(-1, 1, 'lin', 0, 0))
         params:add_text(cell_id)
         table.insert(self.number_depth_params, cell_id)
         self:_add_modulation_depth_params_helper(id, cell_id)
     end
-    for i=1,16,1 do
-        local id = "matrix_connect_"..i
+    for i = 1, 16, 1 do
+        local id = "matrix_connect_" .. i
         local cell_id = id .. "_cell"
         params:add_binary(id, "dummy connect", "toggle", 0)
         params:add_text(cell_id)
