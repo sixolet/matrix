@@ -271,6 +271,12 @@ function ModMatrix:set_depth(param_id, modulation_id, depth)
                 self.matrix[modulation_id] = nil
             end
         end
+        if p.modulation ~= nil then
+            p.modulation[modulation_id] = nil
+        end
+        if p.t ~= params.tTRIGGER then
+            self:defer_bang(p.id, p.priority)
+        end
     else
         if self.matrix[modulation_id] == nil then
             self.matrix[modulation_id] = {}

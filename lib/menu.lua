@@ -141,6 +141,9 @@ m.key = function(n,z)
       local source = matrix:lookup_source(i)
       -- print("setting depth", m.param_id, i, source.id, 0)
       matrix:set_depth(m.param_id, i, nil)
+      if not matrix:used(source.id) then
+        matrix:set(source.id, 0)
+      end
       m.calculated = false
     end
   end
