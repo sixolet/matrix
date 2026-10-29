@@ -271,6 +271,16 @@ function ModMatrix:set_depth(param_id, modulation_id, depth)
                 self.matrix[modulation_id] = nil
             end
         end
+        -- also drop the last computed contribution from the target param:
+        -- get() sums everything in p.modulation, so leaving the stale entry
+        -- kept the modulation active even after the depth was removed (and
+        -- set() never revisits the param once its depth entry is gone)
+        if p.modulation ~= nil then
+            p.modulation[modulation_id] = nil
+            if p.t ~= params.tTRIGGER then
+                self:defer_bang(p.id, p.priority)
+            end
+        end
     else
         if self.matrix[modulation_id] == nil then
             self.matrix[modulation_id] = {}
